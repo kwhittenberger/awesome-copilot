@@ -17,6 +17,7 @@ This workflow guides you through a systematic approach to identify missing featu
   - Any placeholder implementations
 
 **Guiding Questions:**
+
 - What is the primary purpose of this project?
 - What user problems does it solve?
 - What patterns exist in the current implementation?
@@ -31,6 +32,7 @@ This workflow guides you through a systematic approach to identify missing featu
 - Focus on core functionality first (not nice-to-have features)
 
 **Output Creation:**
+
 - Create a list of potential missing features (5-7 items)
 - For each feature, note:
   - Current implementation status
@@ -42,6 +44,7 @@ This workflow guides you through a systematic approach to identify missing featu
 - Apply a score to each identified gap:
 
 **Scoring Matrix (1-5 scale):**
+
 - User Impact: How many users benefit?
 - Strategic Alignment: Fits core mission?
 - Implementation Feasibility: Technical complexity?
@@ -51,6 +54,7 @@ This workflow guides you through a systematic approach to identify missing featu
 **Priority = (User Impact × Strategic Alignment) / (Implementation Effort × Risk Level)**
 
 **Output Creation:**
+
 - Present the top 3 highest-priority missing features based on the scoring
 - For each, provide:
   - Feature name
@@ -67,6 +71,7 @@ This workflow guides you through a systematic approach to identify missing featu
   - Keep the specification implementation-friendly
 
 **For Each Feature Specification:**
+
 1. **Overview & Scope**
    - What problem does it solve?
    - What's included and what's explicitly excluded?
@@ -86,44 +91,46 @@ This workflow guides you through a systematic approach to identify missing featu
    - What specific functionality must work?
    - What tests should pass?
 
-## 5. GitHub Issue Creation Phase
+## 5. Jira Issue Creation Phase
 
-- For each specification, create a GitHub issue:
-  - Clear, descriptive title
-  - Comprehensive specification in the body
-  - Appropriate labels (enhancement, high-priority, etc.)
-  - Explicitly mention MVP philosophy where relevant
+- For each specification, create a Jira issue using appropriate automation scripts:
+  - Clear, descriptive summary
+  - Comprehensive specification in ADF format in the description
+  - Appropriate issue type (Story/Task), priority, and Epic linkage
+  - Include story points and MVP philosophy where relevant
 
-**Issue Template Structure:**
+**Jira Issue Structure:**
 
-# [Feature Name]
+**Summary:** [Feature Name]
 
-## Overview
-[Brief description of the feature and its purpose]
+**Description (ADF Format):**
 
-## Scope
-[What's included and what's explicitly excluded]
+```json
+{
+  "type": "doc",
+  "version": 1,
+  "content": [
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "Overview" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [{ "type": "text", "text": "[Brief description of the feature and its purpose]" }]
+    }
+    // ... additional ADF content for scope, technical requirements, etc.
+  ]
+}
+```
 
-## Technical Requirements
-[Specific technical needs and constraints]
+**Issue Type:** Story or Task as appropriate
+**Priority:** Based on scoring matrix
+**Epic Link:** Link to appropriate Epic
+**Story Points:** Estimated effort
+**Dependencies:** Links to related issues
 
-## Implementation Plan
-[Step-by-step approach with simple code examples]
-
-## Acceptance Criteria
-[Clear list of requirements to consider the feature complete]
-
-## Priority
-[Justification for prioritization]
-
-## Dependencies
-- **Blocks:** [List of issues blocked by this one]
-- **Blocked by:** [List of issues this one depends on]
-
-## Implementation Size
-- **Estimated effort:** [Small/Medium/Large]
-- **Sub-issues:** [Links to sub-issues if this is a parent issue]
-
+**Note**: All issues MUST be created in Jira, not GitHub Issues.
 
 ## 5.5 Work Distribution Optimization
 
@@ -143,9 +150,10 @@ This workflow guides you through a systematic approach to identify missing featu
   - Include sub-issue specific acceptance criteria
 
 **Implementation Guidelines:**
-- Use GitHub issue linking syntax to create explicit relationships
-- Add labels to indicate dependency status (e.g., "blocked", "prerequisite")
-- Include estimated complexity/effort for each issue to aid sprint planning
+
+- Use Jira issue linking to create explicit relationships between issues
+- Add appropriate labels and priorities to indicate dependency status
+- Include estimated complexity/effort (story points) for each issue to aid sprint planning
 
 ## 6. Final Review Phase
 
@@ -155,6 +163,7 @@ This workflow guides you through a systematic approach to identify missing featu
 - Note any potential challenges or considerations
 
 Remember throughout this process:
+
 - Favor simplicity over complexity
 - Start with minimal viable implementations that work
 - Focus on developer experience

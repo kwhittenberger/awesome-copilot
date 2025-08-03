@@ -206,8 +206,8 @@ For use in pull request summaries or executive summaries.
       - Document final verification matrix.
 - [ ] Perform meta-analysis.
       - Reflect on efficiency, tool usage, and protocol adherence.
-- [ ] Auto-create technical debt issues.
-      - Document inventory and remediation plans.
+- [ ] Auto-create technical debt issues in Jira.
+      - Document inventory and remediation plans in Jira using appropriate automation scripts.
 
 **Critical Constraint:**
 
@@ -269,7 +269,7 @@ For use in pull request summaries or executive summaries.
 - **Workspace**: Monitor for organizational drift and naming inconsistencies.
 - **Documentation**: Track incomplete, outdated, or missing documentation.
 
-### Auto-Issue Creation Template
+### Auto-Issue Creation Template (Jira)
 
 ```text
 **Title**: [Technical Debt] - [Brief Description]
@@ -280,6 +280,8 @@ For use in pull request summaries or executive summaries.
 **Remediation**: [Specific, actionable resolution steps]
 **Effort**: [Estimate for resolution (e.g., T-shirt size: S, M, L)]
 ```
+
+**Note**: All technical debt issues MUST be created in Jira, not GitHub Issues.
 
 ### Remediation (Auto-Prioritized)
 

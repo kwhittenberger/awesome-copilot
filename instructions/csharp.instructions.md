@@ -6,10 +6,12 @@ applyTo: '**/*.cs'
 # C# Development
 
 ## C# Instructions
+
 - Always use the latest version C#, currently C# 13 features.
 - Write clear and concise comments for each function.
 
 ## General Instructions
+
 - Make only high confidence suggestions when reviewing code changes.
 - Write code with good maintainability practices, including comments on why certain design decisions were made.
 - Handle edge cases and write clear exception handling.
@@ -23,11 +25,42 @@ applyTo: '**/*.cs'
 
 ## Formatting
 
-- Apply code-formatting style defined in `.editorconfig`.
-- Prefer file-scoped namespace declarations and single-line using directives.
-- Insert a newline before the opening curly brace of any code block (e.g., after `if`, `for`, `while`, `foreach`, `using`, `try`, etc.).
-- Ensure that the final return statement of a method is on its own line.
-- Use pattern matching and switch expressions wherever possible.
+**REQUIRED: All .NET projects must enforce code formatting on build.**
+
+- Use `dotnet format --verify-no-changes` before committing code
+- Formatting verification is integrated into the build process via Directory.Build.props
+- CI/CD pipeline will fail if code is not properly formatted
+
+### Formatting Commands
+
+```bash
+# Format all code in the solution
+dotnet format src/backend/RealEstatePlatform.sln
+
+# Verify formatting without making changes
+dotnet format src/backend/RealEstatePlatform.sln --verify-no-changes
+
+# Use the helper script (recommended)
+./scripts/development/Format-Code.ps1           # Format code
+./scripts/development/Format-Code.ps1 -Verify  # Verify only
+```
+
+### Formatting Infrastructure
+
+- **Directory.Build.props**: MSBuild target runs format verification before build
+- **`.editorconfig`**: Comprehensive C# formatting rules and style preferences
+- **GitHub Actions**: Automated formatting checks on pull requests
+- **PowerShell Scripts**: Developer-friendly formatting automation
+
+### Style Requirements
+
+- Apply code-formatting style defined in `.editorconfig`
+- **REQUIRED**: Run `dotnet format` before committing code to ensure consistent formatting
+- All builds must fail if code formatting violations are detected
+- Prefer file-scoped namespace declarations and single-line using directives
+- Insert a newline before the opening curly brace of any code block (e.g., after `if`, `for`, `while`, `foreach`, `using`, `try`, etc.)
+- Ensure that the final return statement of a method is on its own line
+- Use pattern matching and switch expressions wherever possible
 - Use `nameof` instead of string literals when referring to member names.
 - Ensure that XML doc comments are created for any public APIs. When applicable, include `<example>` and `<code>` documentation in the comments.
 

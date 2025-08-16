@@ -2,7 +2,12 @@
 applyTo: "**"
 ---
 
-# Development Workflow Instructions
+# Development Workflow **Identity Validation Checklist:**
+
+- [ ] Git user.email = `copilotwhittenberger@gmail.com`
+- [ ] Git user.name = "Copilot Engineer"
+- [ ] NO work performed under `kwhittenberger@mac.com` identity
+- [ ] Identity verified before each development sessionctions
 
 ## Overview
 
@@ -22,17 +27,48 @@ This document outlines the mandatory development workflow that **MUST** be follo
 
 ### Phase 1: Issue Assignment & Planning
 
-#### 1.1 Jira Issue Management
+#### 1.1 Identity Verification (MANDATORY FIRST STEP)
 
 ```bash
-# ✅ REQUIRED: Assign issue to yourself
+# ✅ CRITICAL: Verify Git identity before any development work
+git config --get user.email
+git config --get user.name
+
+# ✅ REQUIRED: Must show copilotwhittenberger@gmail.com and "Copilot Engineer"
+# ❌ STOP: If showing kwhittenberger@mac.com or any other identity
+```
+
+**Identity Configuration Requirements:**
+
+```bash
+# ✅ REQUIRED: Set correct identity if not already configured
+git config user.email "copilotwhittenberger@gmail.com"
+git config user.name "Copilot Engineer"
+
+# ✅ VERIFY: Confirm configuration is correct
+git config --list | grep user
+```
+
+**Identity Validation Checklist:**
+
+- [ ] Git user.email = <copilotwhittenberger@gmail.com>
+- [ ] Git user.name = "Copilot Engineer"
+- [ ] NO work performed under <kwhittenberger@mac.com> identity
+- [ ] Identity verified before each development session
+
+#### 1.2 Jira Issue Management
+
+```bash
+# ✅ REQUIRED: Assign issue to copilotwhittenberger@gmail.com (Copilot Engineer)
 # ✅ REQUIRED: Move issue from "Backlog" to "In Development"
 # ✅ REQUIRED: Verify Epic assignment and sprint assignment
 ```
 
 **Validation Checklist:**
 
-- [ ] Issue assigned to developer
+- [ ] **IDENTITY VERIFIED** (see 1.1 above)
+- [ ] **REQUIRED**: Use manage_todo_list tool to create initial todo list for the task
+- [ ] Issue assigned to `copilotwhittenberger@gmail.com` (Copilot Engineer)
 - [ ] Status moved to "In Development"
 - [ ] Epic and Sprint properly assigned
 - [ ] Story points and due date confirmed
@@ -81,6 +117,8 @@ git push -u origin feature/reip-{issue-number}-{description}
 
 #### 3.1 Development Standards
 
+- [ ] **REQUIRED**: Use manage_todo_list tool to mark items as in-progress before starting work
+- [ ] **REQUIRED**: Use manage_todo_list tool to mark items as completed immediately after finishing
 - [ ] Follow Clean Architecture patterns
 - [ ] Implement comprehensive error handling
 - [ ] Add appropriate logging and monitoring
@@ -113,11 +151,18 @@ git commit -m "docs(REIP-33): update authentication API documentation"
 #### 3.3 Development Validation
 
 ```bash
+# ✅ REQUIRED: Code formatting verification
+dotnet format --verify-no-changes
+
 # ✅ REQUIRED: Build verification
 dotnet build
 
-# ✅ REQUIRED: Test execution
+# ✅ REQUIRED: Test execution with UNIFIED FRAMEWORK
 dotnet test
+
+# ✅ REQUIRED: Unified test framework validation
+# Verify all test projects use RealEstatePlatform.Testing library
+dotnet list package --include-transitive | grep RealEstatePlatform.Testing
 
 # ✅ REQUIRED: Code quality checks
 # Run linting, static analysis, security scans
@@ -125,16 +170,33 @@ dotnet test
 
 **Validation Checklist:**
 
+- [ ] Code formatting passes (`dotnet format --verify-no-changes`)
 - [ ] All builds pass successfully
-- [ ] All tests pass
+- [ ] **MANDATORY**: All tests use unified RealEstatePlatform.Testing library
+- [ ] **MANDATORY**: No custom test infrastructure implementations present
+- [ ] **MANDATORY**: All test data creation uses builder patterns
+- [ ] All tests pass with unified framework
 - [ ] No security vulnerabilities introduced
 - [ ] Code follows project conventions
 - [ ] Documentation updated if needed
+
+**Testing Framework Compliance (MANDATORY):**
+
+- [ ] **REQUIRED**: All test projects reference `RealEstatePlatform.Testing`
+- [ ] **PROHIBITED**: Custom WebApplicationFactory implementations
+- [ ] **PROHIBITED**: Manual database context setup/cleanup
+- [ ] **PROHIBITED**: Custom authentication helpers
+- [ ] **PROHIBITED**: Direct entity instantiation (must use builders)
+- [ ] **REQUIRED**: Use `DatabaseFixture` for database tests
+- [ ] **REQUIRED**: Use `AuthenticationFixture` for auth tests
+- [ ] **REQUIRED**: Use `TestWebApplicationFactory` for integration tests
+- [ ] **REQUIRED**: Use builder patterns for all test data
 
 ### Phase 4: Pull Request Creation
 
 #### 4.1 Pre-PR Checklist
 
+- [ ] Code formatting verified (`dotnet format --verify-no-changes`)
 - [ ] All changes committed and pushed
 - [ ] Feature branch up to date with main
 - [ ] Build passes successfully
@@ -147,16 +209,17 @@ dotnet test
 # ✅ REQUIRED: Push latest changes
 git push origin feature/reip-{issue-number}-{description}
 
-# ✅ REQUIRED: Create PR using GitHub CLI with auto-merge enabled
+# ✅ REQUIRED: Create PR using GitHub CLI with detailed description
 gh pr create \
   --title "feat(REIP-{number}): {Implementation Title}" \
   --body-file pr-template.md \
-  --assignee @me \
+  --assignee copilotwhittenberger@gmail.com \
   --label "enhancement" \
   --milestone "Sprint 1"
 
-# ✅ OPTIONAL: Enable auto-merge (requires branch protection rules)
-gh pr merge --auto --squash
+# ✅ RECOMMENDED: Enable manual auto-merge after PR is ready
+# Wait for: reviewers assigned, all checks passing, approval received
+gh pr merge <PR_NUMBER> --auto --squash --delete-branch
 ```
 
 #### 4.2.1 Auto-Merge Configuration
@@ -168,14 +231,26 @@ gh pr merge --auto --squash
 - Required reviewers configured (minimum 1)
 - Dismiss stale reviews enabled
 
-**Enable Auto-Merge:**
+**Manual Auto-Merge (Recommended Approach):**
+
+Due to branch protection settings with `enforce_admins: true`, GitHub Actions cannot automatically enable auto-merge. Use the manual approach:
 
 ```bash
-# Enable auto-merge for current PR
-gh pr merge --auto --squash
+# After PR creation and when ready to merge:
+gh pr merge <PR_NUMBER> --auto --squash --delete-branch
 
-# Check auto-merge status
-gh pr view --json autoMergeRequest
+# Check PR status and requirements
+gh pr checks <PR_NUMBER>
+gh pr view <PR_NUMBER> --json mergeable,mergeStateStatus
+```
+
+**Automated Auto-Merge (Limited Support):**
+
+GitHub Actions auto-merge may fail with branch protection `enforce_admins: true`. Only works when this setting is disabled:
+
+```bash
+# This approach requires enforce_admins: false in branch protection
+gh pr merge --auto --squash
 ```
 
 #### 4.3 PR Description Template
@@ -244,10 +319,28 @@ Brief description of what this PR implements.
 
 **Testing:**
 
-- [ ] Adequate test coverage
+- [ ] **MANDATORY**: All tests use RealEstatePlatform.Testing unified library
+- [ ] **MANDATORY**: No custom test infrastructure implementations
+- [ ] **MANDATORY**: All test data creation uses builder patterns
+- [ ] **MANDATORY**: Database tests use DatabaseFixture from unified library
+- [ ] **MANDATORY**: Authentication tests use AuthenticationFixture from unified library
+- [ ] **MANDATORY**: Integration tests use TestWebApplicationFactory from unified library
+- [ ] Adequate test coverage for new functionality
 - [ ] Tests are meaningful and robust
 - [ ] Edge cases covered
 - [ ] Integration points tested
+- [ ] All tests pass with unified framework
+
+**Unified Testing Framework Compliance:**
+
+- [ ] **ZERO TOLERANCE**: No custom WebApplicationFactory implementations
+- [ ] **ZERO TOLERANCE**: No manual database setup/cleanup patterns
+- [ ] **ZERO TOLERANCE**: No custom authentication helpers
+- [ ] **ZERO TOLERANCE**: No direct entity instantiation (must use builders)
+- [ ] **ZERO TOLERANCE**: No duplicate test infrastructure patterns
+- [ ] **REQUIRED**: Use collection fixtures (`[Collection("Database")]`, `[Collection("Authentication")]`)
+- [ ] **REQUIRED**: Follow established builder patterns (UserBuilder, PropertyBuilder, TestDataBuilder)
+- [ ] **REQUIRED**: Proper async/await patterns in test methods
 
 **Documentation:**
 
@@ -256,33 +349,34 @@ Brief description of what this PR implements.
 - [ ] README updates if needed
 - [ ] Architecture decisions recorded
 
-### Phase 6: Merge & Deployment
+### Phase 6: Handoff
 
-#### 6.1 Automated Merge Process
+#### 6.1 Manual Merge Process (Recommended)
 
-**Auto-Merge Flow (Recommended):**
+**Manual Auto-Merge (Primary Approach):**
 
-```bash
-# ✅ Auto-merge handles everything when conditions are met:
-# - All required checks pass (build, tests, security)
-# - Required approvals received
-# - No merge conflicts
-# - Branch is up-to-date with main
-
-# Manual verification (optional)
-gh pr checks
-gh pr view --json mergeable,mergeStateStatus
-```
-
-**Manual Merge Process (Fallback):**
+Due to branch protection `enforce_admins: true`, use manual auto-merge for reliable merging:
 
 ```bash
-# ✅ REQUIRED: Use "Squash and merge" for feature branches
-# ✅ REQUIRED: Delete feature branch after merge
-# ✅ REQUIRED: Update local main branch
+# ✅ RECOMMENDED: Manual auto-merge when PR is ready
+gh pr merge <PR_NUMBER> --auto --squash --delete-branch
+
+# Verify PR requirements are met
+gh pr checks <PR_NUMBER>
+gh pr view <PR_NUMBER> --json mergeable,mergeStateStatus
+
+# Update local main branch after merge
 git checkout main
 git pull origin main
-git branch -d feature/reip-{issue-number}-{description}
+```
+
+**Direct Manual Merge (Fallback):**
+
+```bash
+# ✅ FALLBACK: Use GitHub web interface or CLI for immediate merge
+# In GitHub web interface: Use "Squash and merge" button
+# Or via CLI when auto-merge is not needed:
+gh pr merge <PR_NUMBER> --squash --delete-branch
 ```
 
 #### 6.2 Automated Post-Merge Actions
@@ -297,8 +391,9 @@ git branch -d feature/reip-{issue-number}-{description}
 
 **Manual Post-Merge Actions (If Automation Fails):**
 
+- [ ] **REQUIRED**: Use manage_todo_list tool to ensure all todos are marked completed
 - [ ] **Verify Jira status** updated to "Done"
-- [ ] **Add completion comment** in Jira with PR link
+- [ ] **Add completion comment** in Jira with PR link using `.\scripts\jira\Add-JiraComment.ps1`
 - [ ] **Verify deployment** to staging environment
 - [ ] **Update project documentation** if needed
 - [ ] **Notify stakeholders** if required
@@ -346,14 +441,22 @@ Backlog → In Development → In Review → Done
 **Jira Update Script Template:**
 
 ```powershell
-# Update REIP-{number} status to Done after PR merge
-$issueKey = "REIP-{number}"
-$prUrl = "https://github.com/kwhittenberger/real-estate-requirements/pull/{pr-number}"
+# Update issue status using standardized CRUD operations
+# Note: When moving to "Done" status, the issue is automatically unassigned
+.\scripts\jira\Set-JiraIssue.ps1 -IssueKey "REIP-{number}" -Status "Done"
 
-# Add completion comment with PR link
-# Move status to Done
-# Update resolution field
+# To override auto-unassignment (rare cases), explicitly specify assignee
+.\scripts\jira\Set-JiraIssue.ps1 -IssueKey "REIP-{number}" -Status "Done" -Assignee "user@example.com"
+
+# Add completion comment with PR link using dedicated comment script
+.\scripts\jira\Add-JiraComment.ps1 -IssueKey "REIP-{number}" -Comment "Completed via PR: https://github.com/kwhittenberger/real-estate-requirements/pull/{pr-number}"
 ```
+
+**Auto-Unassignment Policy:**
+
+- **Automatic**: Moving any issue to "Done" status automatically unassigns it
+- **Override**: Explicitly specify `-Assignee` parameter to override this behavior
+- **Rationale**: Completed tasks should be unassigned to allow team focus on active work
 
 ---
 
@@ -404,8 +507,11 @@ git checkout -b hotfix/reip-{number}-{critical-fix}
 
 ### Automation Scripts
 
-- `scripts/jira/Start-Development-Workflow.ps1` - Initialize workflow
-- `scripts/jira/Update-Issue-Status.ps1` - Update Jira status
+- `scripts/jira/New-JiraIssue.ps1` - Create new issues with comprehensive parameters
+- `scripts/jira/Set-JiraIssue.ps1` - Update issue status and fields
+- `scripts/jira/Get-JiraIssue.ps1` - Retrieve and search issues
+- `scripts/jira/Add-JiraComment.ps1` - Add comments to issues with formatting options
+- `scripts/jira/Remove-JiraIssue.ps1` - Delete issues with confirmations
 - `scripts/git/Create-Feature-Branch.ps1` - Create feature branch
 - `scripts/validation/Pre-PR-Check.ps1` - Pre-PR validation
 - `scripts/automation/Setup-Auto-Merge.ps1` - Configure auto-merge
@@ -516,7 +622,7 @@ jobs:
 ### Start New Feature
 
 ```bash
-# 1. Assign issue in Jira and move to "In Development"
+# 1. Assign issue to copilotwhittenberger@gmail.com in Jira and move to "In Progress"
 # 2. Create feature branch
 git checkout main && git pull origin main
 git checkout -b feature/reip-{number}-{description}
@@ -529,18 +635,20 @@ git push -u origin feature/reip-{number}-{description}
 # 1. Ensure all changes committed and pushed
 git push origin feature/reip-{number}-{description}
 
-# 2. Create PR with auto-merge enabled
+# 2. Create PR with comprehensive description
 gh pr create --title "feat(REIP-{number}): {title}" --body-file pr-template.md
-gh pr merge --auto --squash
 
-# 3. Monitor auto-merge status
-gh pr checks
+# 3. Enable auto-merge manually (after creation)
+gh pr merge <PR_NUMBER> --auto --squash --delete-branch
+
+# 4. Monitor PR status
+gh pr checks <PR_NUMBER>
 ```
 
 ### Complete Automated Workflow
 
 ```bash
-# 1. Auto-merge handles merge when approved and checks pass
+# 1. Manual auto-merge handles merge when approved and checks pass
 # 2. GitHub Actions handle post-merge automation:
 #    - Branch deletion
 #    - Jira status update to Done
@@ -617,6 +725,21 @@ git push --force-with-lease
 gh pr merge --auto --squash
 ```
 
+### Issue: "GitHub Actions auto-merge permissions error"
+
+**Root Cause**: Branch protection `enforce_admins: true` prevents GitHub Actions from enabling auto-merge
+
+**Solution**: Use manual auto-merge approach
+
+```bash
+# Manual auto-merge (recommended approach)
+gh pr merge <PR_NUMBER> --auto --squash --delete-branch
+
+# Check PR status first
+gh pr checks <PR_NUMBER>
+gh pr view <PR_NUMBER> --json mergeable,mergeStateStatus
+```
+
 ### Issue: "GitHub Actions workflow failed"
 
 **Solution**:
@@ -634,6 +757,19 @@ gh run rerun {run-id}
 
 **Solution**: Run `scripts/jira/Set-PersistentJiraEnvironmentVariables.ps1`
 
+### Issue: "Jira script not found"
+
+**Solution**: Use standardized CRUD operations:
+
+```powershell
+# Instead of obsolete scripts, use:
+.\scripts\jira\New-JiraIssue.ps1      # For creating issues
+.\scripts\jira\Get-JiraIssue.ps1      # For retrieving issues  
+.\scripts\jira\Set-JiraIssue.ps1      # For updating issues
+.\scripts\jira\Add-JiraComment.ps1    # For adding comments
+.\scripts\jira\Remove-JiraIssue.ps1   # For deleting issues
+```
+
 ---
 
 ## Workflow Checklist Template
@@ -642,7 +778,7 @@ Copy this checklist for each new development task:
 
 ### Pre-Development
 
-- [ ] Issue assigned in Jira
+- [ ] Issue assigned to <copilotwhittenberger@gmail.com> in Jira
 - [ ] Issue moved to "In Development"
 - [ ] Requirements and acceptance criteria reviewed
 - [ ] Feature branch created from latest main
@@ -667,15 +803,15 @@ Copy this checklist for each new development task:
 ### PR Process
 
 - [ ] PR created with comprehensive description
-- [ ] Auto-merge enabled for approved PRs
+- [ ] Manual auto-merge enabled when PR is ready for approval
 - [ ] Reviewers assigned
 - [ ] Build/test status checks pass
 - [ ] Code review completed and approved
-- [ ] PR auto-merged using "Squash and merge"
+- [ ] PR manually merged using `gh pr merge --auto --squash --delete-branch`
 
 ### Post-Merge (Automated)
 
-- [ ] Feature branch automatically deleted
+- [ ] Feature branch automatically deleted via manual auto-merge
 - [ ] Local main branch updated manually
 - [ ] Jira issue automatically moved to "Done"
 - [ ] Staging deployment automatically triggered

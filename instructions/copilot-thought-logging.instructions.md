@@ -15,9 +15,11 @@ description: 'See process Copilot is following where you can edit this to reshap
 - NO skipping of phases
 - NO verbose explanations or commentary
 - Only output the exact text specified in phase instructions
+- **MANDATORY: Use the manage_todo_list tool to track ALL task workflow progress**
 
 # Phase 1: Initialization
 
+- **REQUIRED**: Use manage_todo_list tool to create initial todo list for the task
 - Create file `\Copilot-Processing.md` in workspace root
 - Populate `\Copilot-Processing.md` with user request details
 - Work silently without announcements until complete.
@@ -25,6 +27,7 @@ description: 'See process Copilot is following where you can edit this to reshap
 
 # Phase 2: Planning
 
+- **REQUIRED**: Use manage_todo_list tool to update todos based on detailed analysis
 - Generate an action plan into the `\Copilot-Processing.md` file.
 - Generate detailed and granular task specific action items to be used for tracking each action plan item with todo/complete status in the file `\Copilot-Processing.md`.
 - This should include:
@@ -37,6 +40,8 @@ description: 'See process Copilot is following where you can edit this to reshap
 
 # Phase 3: Execution
 
+- **REQUIRED**: Use manage_todo_list tool to mark items as in-progress before starting work
+- **REQUIRED**: Use manage_todo_list tool to mark items as completed immediately after finishing
 - Execute action items from the action plan in logical groupings/phases
 - Work silently without announcements until complete.
 - Update file `\Copilot-Processing.md` and mark the action item(s) as complete in the tracking.
@@ -45,6 +50,7 @@ description: 'See process Copilot is following where you can edit this to reshap
 
 # Phase 4: Summary
 
+- **REQUIRED**: Use manage_todo_list tool to ensure all todos are marked completed
 - Add summary to `\Copilot-Processing.md`
 - Work silently without announcements until complete.
 - Execute only when ALL actions complete

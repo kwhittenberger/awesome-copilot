@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -26,11 +26,9 @@ jobs:
         run: npm install
 
       - name: Update contributors
-        uses: all-contributors/all-contributors-cli@v6.26.1
-        with:
-          args: 'check'
+        run: npm run contributors:check
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Regenerate README
         run: node update-readme.js
@@ -54,14 +52,14 @@ jobs:
 
       - name: Create Pull Request
         if: steps.verify-changed-files.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "docs: update contributors"
           title: "Update Contributors"
           body: |
             Auto-generated PR to update contributors.
-            
+
             This PR was automatically created by the contributors workflow.
           branch: update-contributors
           delete-branch: true

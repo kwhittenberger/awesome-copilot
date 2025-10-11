@@ -90,13 +90,16 @@ function extractTitle(filePath) {
       // Step 1: Look for title in frontmatter for all file types
       let inFrontmatter = false;
       let frontmatterEnded = false;
+      let hasFrontmatter = false;
 
       for (const line of lines) {
         if (line.trim() === "---") {
           if (!inFrontmatter) {
             inFrontmatter = true;
+            hasFrontmatter = true;
           } else if (!frontmatterEnded) {
             frontmatterEnded = true;
+            break;
           }
           continue;
         }
@@ -115,28 +118,58 @@ function extractTitle(filePath) {
         }
       }
 
-      // Reset for second pass
-      inFrontmatter = false;
-      frontmatterEnded = false;
-
       // Step 2: For prompt/chatmode/instructions files, look for heading after frontmatter
       if (
         filePath.includes(".prompt.md") ||
         filePath.includes(".chatmode.md") ||
         filePath.includes(".instructions.md")
       ) {
-        for (const line of lines) {
-          if (line.trim() === "---") {
-            if (!inFrontmatter) {
-              inFrontmatter = true;
-            } else if (inFrontmatter && !frontmatterEnded) {
-              frontmatterEnded = true;
-            }
-            continue;
-          }
+        // If we had frontmatter, only look for headings after it ended
+        if (hasFrontmatter) {
+          let inFrontmatter2 = false;
+          let frontmatterEnded2 = false;
+          let inCodeBlock = false;
 
-          if (frontmatterEnded && line.startsWith("# ")) {
-            return line.substring(2).trim();
+          for (const line of lines) {
+            if (line.trim() === "---") {
+              if (!inFrontmatter2) {
+                inFrontmatter2 = true;
+              } else if (inFrontmatter2 && !frontmatterEnded2) {
+                frontmatterEnded2 = true;
+              }
+              continue;
+            }
+
+            // Track code blocks to ignore headings inside them
+            if (frontmatterEnded2) {
+              if (
+                line.trim().startsWith("```") ||
+                line.trim().startsWith("````")
+              ) {
+                inCodeBlock = !inCodeBlock;
+                continue;
+              }
+
+              if (!inCodeBlock && line.startsWith("# ")) {
+                return line.substring(2).trim();
+              }
+            }
+          }
+        } else {
+          // No frontmatter, look for first heading (but not in code blocks)
+          let inCodeBlock = false;
+          for (const line of lines) {
+            if (
+              line.trim().startsWith("```") ||
+              line.trim().startsWith("````")
+            ) {
+              inCodeBlock = !inCodeBlock;
+              continue;
+            }
+
+            if (!inCodeBlock && line.startsWith("# ")) {
+              return line.substring(2).trim();
+            }
           }
         }
 
@@ -154,9 +187,15 @@ function extractTitle(filePath) {
           .replace(/\b\w/g, (l) => l.toUpperCase());
       }
 
-      // Step 4: For instruction files, look for the first heading
+      // Step 4: For instruction files, look for the first heading (but not in code blocks)
+      let inCodeBlock = false;
       for (const line of lines) {
-        if (line.startsWith("# ")) {
+        if (line.trim().startsWith("```") || line.trim().startsWith("````")) {
+          inCodeBlock = !inCodeBlock;
+          continue;
+        }
+
+        if (!inCodeBlock && line.startsWith("# ")) {
           return line.substring(2).trim();
         }
       }
@@ -227,7 +266,9 @@ function extractDescription(filePath) {
               let description = descriptionMatch[1];
 
               // Check if the description is wrapped in single quotes and handle escaped quotes
-              const singleQuoteMatch = line.match(/^description:\s*'(.+?)'\s*$/);
+              const singleQuoteMatch = line.match(
+                /^description:\s*'(.+?)'\s*$/
+              );
               if (singleQuoteMatch) {
                 // Replace escaped single quotes ('') with single quotes (')
                 description = singleQuoteMatch[1].replace(/''/g, "'");
@@ -275,8 +316,12 @@ const AKA_INSTALL_URLS = {
 function makeBadges(link, type) {
   const aka = AKA_INSTALL_URLS[type] || AKA_INSTALL_URLS.instructions;
 
-  const vscodeUrl = `${aka}?url=${encodeURIComponent(`vscode:chat-${type}/install?url=${repoBaseUrl}/${link}`)}`;
-  const insidersUrl = `${aka}?url=${encodeURIComponent(`vscode-insiders:chat-${type}/install?url=${repoBaseUrl}/${link}`)}`;
+  const vscodeUrl = `${aka}?url=${encodeURIComponent(
+    `vscode:chat-${type}/install?url=${repoBaseUrl}/${link}`
+  )}`;
+  const insidersUrl = `${aka}?url=${encodeURIComponent(
+    `vscode-insiders:chat-${type}/install?url=${repoBaseUrl}/${link}`
+  )}`;
 
   return `[![Install in VS Code](${vscodeInstallImage})](${vscodeUrl})<br />[![Install in VS Code Insiders](${vscodeInsidersInstallImage})](${insidersUrl})`;
 }
@@ -293,13 +338,22 @@ function generateInstructionsSection(instructionsDir) {
   // Get all instruction files
   const instructionFiles = fs
     .readdirSync(instructionsDir)
-    .filter((file) => file.endsWith(".md"))
-    .sort();
+    .filter((file) => file.endsWith(".md"));
 
-  console.log(`Found ${instructionFiles.length} instruction files`);
+  // Map instruction files to objects with title for sorting
+  const instructionEntries = instructionFiles.map((file) => {
+    const filePath = path.join(instructionsDir, file);
+    const title = extractTitle(filePath);
+    return { file, filePath, title };
+  });
+
+  // Sort by title alphabetically
+  instructionEntries.sort((a, b) => a.title.localeCompare(b.title));
+
+  console.log(`Found ${instructionEntries.length} instruction files`);
 
   // Return empty string if no files found
-  if (instructionFiles.length === 0) {
+  if (instructionEntries.length === 0) {
     return "";
   }
 
@@ -308,9 +362,8 @@ function generateInstructionsSection(instructionsDir) {
     "| Title | Description |\n| ----- | ----------- |\n";
 
   // Generate table rows for each instruction file
-  for (const file of instructionFiles) {
-    const filePath = path.join(instructionsDir, file);
-    const title = extractTitle(filePath);
+  for (const entry of instructionEntries) {
+    const { file, filePath, title } = entry;
     const link = encodeURI(`instructions/${file}`);
 
     // Check if there's a description in the frontmatter
@@ -344,24 +397,31 @@ function generatePromptsSection(promptsDir) {
   // Get all prompt files
   const promptFiles = fs
     .readdirSync(promptsDir)
-    .filter((file) => file.endsWith(".prompt.md"))
-    .sort();
+    .filter((file) => file.endsWith(".prompt.md"));
 
-  console.log(`Found ${promptFiles.length} prompt files`);
+  // Map prompt files to objects with title for sorting
+  const promptEntries = promptFiles.map((file) => {
+    const filePath = path.join(promptsDir, file);
+    const title = extractTitle(filePath);
+    return { file, filePath, title };
+  });
+
+  // Sort by title alphabetically
+  promptEntries.sort((a, b) => a.title.localeCompare(b.title));
+
+  console.log(`Found ${promptEntries.length} prompt files`);
 
   // Return empty string if no files found
-  if (promptFiles.length === 0) {
+  if (promptEntries.length === 0) {
     return "";
   }
 
   // Create table header
-  let promptsContent =
-    "| Title | Description |\n| ----- | ----------- |\n";
+  let promptsContent = "| Title | Description |\n| ----- | ----------- |\n";
 
   // Generate table rows for each prompt file
-  for (const file of promptFiles) {
-    const filePath = path.join(promptsDir, file);
-    const title = extractTitle(filePath);
+  for (const entry of promptEntries) {
+    const { file, filePath, title } = entry;
     const link = encodeURI(`prompts/${file}`);
 
     // Check if there's a description in the frontmatter
@@ -393,24 +453,31 @@ function generateChatModesSection(chatmodesDir) {
   // Get all chat mode files
   const chatmodeFiles = fs
     .readdirSync(chatmodesDir)
-    .filter((file) => file.endsWith(".chatmode.md"))
-    .sort();
+    .filter((file) => file.endsWith(".chatmode.md"));
 
-  console.log(`Found ${chatmodeFiles.length} chat mode files`);
+  // Map chat mode files to objects with title for sorting
+  const chatmodeEntries = chatmodeFiles.map((file) => {
+    const filePath = path.join(chatmodesDir, file);
+    const title = extractTitle(filePath);
+    return { file, filePath, title };
+  });
+
+  // Sort by title alphabetically
+  chatmodeEntries.sort((a, b) => a.title.localeCompare(b.title));
+
+  console.log(`Found ${chatmodeEntries.length} chat mode files`);
 
   // If no chat modes, return empty string
-  if (chatmodeFiles.length === 0) {
+  if (chatmodeEntries.length === 0) {
     return "";
   }
 
   // Create table header
-  let chatmodesContent =
-    "| Title | Description |\n| ----- | ----------- |\n";
+  let chatmodesContent = "| Title | Description |\n| ----- | ----------- |\n";
 
   // Generate table rows for each chat mode file
-  for (const file of chatmodeFiles) {
-    const filePath = path.join(chatmodesDir, file);
-    const title = extractTitle(filePath);
+  for (const entry of chatmodeEntries) {
+    const { file, filePath, title } = entry;
     const link = encodeURI(`chatmodes/${file}`);
 
     // Check if there's a description in the frontmatter
@@ -442,13 +509,33 @@ function generateCollectionsSection(collectionsDir) {
   // Get all collection files
   const collectionFiles = fs
     .readdirSync(collectionsDir)
-    .filter((file) => file.endsWith(".collection.yml"))
-    .sort();
+    .filter((file) => file.endsWith(".collection.yml"));
 
-  console.log(`Found ${collectionFiles.length} collection files`);
+  // Map collection files to objects with name for sorting
+  const collectionEntries = collectionFiles
+    .map((file) => {
+      const filePath = path.join(collectionsDir, file);
+      const collection = parseCollectionYaml(filePath);
+
+      if (!collection) {
+        console.warn(`Failed to parse collection: ${file}`);
+        return null;
+      }
+
+      const collectionId =
+        collection.id || path.basename(file, ".collection.yml");
+      const name = collection.name || collectionId;
+      return { file, filePath, collection, collectionId, name };
+    })
+    .filter((entry) => entry !== null); // Remove failed parses
+
+  // Sort by name alphabetically
+  collectionEntries.sort((a, b) => a.name.localeCompare(b.name));
+
+  console.log(`Found ${collectionEntries.length} collection files`);
 
   // If no collections, return empty string
-  if (collectionFiles.length === 0) {
+  if (collectionEntries.length === 0) {
     return "";
   }
 
@@ -457,21 +544,12 @@ function generateCollectionsSection(collectionsDir) {
     "| Name | Description | Items | Tags |\n| ---- | ----------- | ----- | ---- |\n";
 
   // Generate table rows for each collection file
-  for (const file of collectionFiles) {
-    const filePath = path.join(collectionsDir, file);
-    const collection = parseCollectionYaml(filePath);
-    
-    if (!collection) {
-      console.warn(`Failed to parse collection: ${file}`);
-      continue;
-    }
-
-    const collectionId = collection.id || path.basename(file, ".collection.yml");
-    const name = collection.name || collectionId;
+  for (const entry of collectionEntries) {
+    const { collection, collectionId, name } = entry;
     const description = collection.description || "No description";
     const itemCount = collection.items ? collection.items.length : 0;
     const tags = collection.tags ? collection.tags.join(", ") : "";
-    
+
     const link = `collections/${collectionId}.md`;
 
     collectionsContent += `| [${name}](${link}) | ${description} | ${itemCount} items | ${tags} |\n`;
@@ -491,15 +569,18 @@ function generateCollectionReadme(collection, collectionId) {
   const name = collection.name || collectionId;
   const description = collection.description || "No description provided.";
   const tags = collection.tags ? collection.tags.join(", ") : "None";
-  
+
   let content = `# ${name}\n\n${description}\n\n`;
-  
+
   if (collection.tags && collection.tags.length > 0) {
     content += `**Tags:** ${tags}\n\n`;
   }
-  
+
   content += `## Items in this Collection\n\n`;
   content += `| Title | Type | Description |\n| ----- | ---- | ----------- |\n`;
+
+  let collectionUsageHeader = "## Collection Usage\n\n";
+  let collectionUsageContent = [];
 
   // Sort items based on display.ordering setting
   const items = [...collection.items];
@@ -515,19 +596,52 @@ function generateCollectionReadme(collection, collectionId) {
     const filePath = path.join(__dirname, item.path);
     const title = extractTitle(filePath);
     const description = extractDescription(filePath) || "No description";
-    const typeDisplay = item.kind === "chat-mode" ? "Chat Mode" : 
-                       item.kind === "instruction" ? "Instruction" : "Prompt";
+
+    const typeDisplay =
+      item.kind === "chat-mode"
+        ? "Chat Mode"
+        : item.kind === "instruction"
+        ? "Instruction"
+        : "Prompt";
     const link = `../${item.path}`;
 
     // Create install badges for each item
-    const badges = makeBadges(item.path, item.kind === "instruction" ? "instructions" : 
-                             item.kind === "chat-mode" ? "mode" : "prompt");
+    const badges = makeBadges(
+      item.path,
+      item.kind === "instruction"
+        ? "instructions"
+        : item.kind === "chat-mode"
+        ? "mode"
+        : "prompt"
+    );
 
-    content += `| [${title}](${link})<br />${badges} | ${typeDisplay} | ${description} |\n`;
+    const usageDescription = item.usage
+      ? `${description} [see usage](#${title
+          .replace(/\s+/g, "-")
+          .toLowerCase()})`
+      : description;
+
+    content += `| [${title}](${link})<br />${badges} | ${typeDisplay} | ${usageDescription} |\n`;
+    // Generate Usage section for each collection
+    if (item.usage && item.usage.trim()) {
+      collectionUsageContent.push(
+        `### ${title}\n\n${item.usage.trim()}\n\n---\n\n`
+      );
+    }
   }
 
+  // Append the usage section if any items had usage defined
+  if (collectionUsageContent.length > 0) {
+    content += `\n${collectionUsageHeader}${collectionUsageContent.join("")}`;
+  } else if (collection.display?.show_badge) {
+    content += "\n---\n";
+  }
+
+  // Optional badge note at the end if show_badge is true
   if (collection.display?.show_badge) {
-    content += `\n---\n*This collection includes ${items.length} curated items for ${name.toLowerCase()}.*`;
+    content += `*This collection includes ${
+      items.length
+    } curated items for ${name.toLowerCase()}.*`;
   }
 
   return content;
@@ -539,12 +653,16 @@ function writeFileIfChanged(filePath, content) {
   if (exists) {
     const original = fs.readFileSync(filePath, "utf8");
     if (original === content) {
-      console.log(`${path.basename(filePath)} is already up to date. No changes needed.`);
+      console.log(
+        `${path.basename(filePath)} is already up to date. No changes needed.`
+      );
       return;
     }
   }
   fs.writeFileSync(filePath, content);
-  console.log(`${path.basename(filePath)} ${exists ? "updated" : "created"} successfully!`);
+  console.log(
+    `${path.basename(filePath)} ${exists ? "updated" : "created"} successfully!`
+  );
 }
 
 // Build per-category README content using existing generators, upgrading headings to H1
@@ -568,10 +686,16 @@ try {
   const collectionsDir = path.join(__dirname, "collections");
 
   // Compose headers for standalone files by converting section headers to H1
-  const instructionsHeader = TEMPLATES.instructionsSection.replace(/^##\s/m, "# ");
+  const instructionsHeader = TEMPLATES.instructionsSection.replace(
+    /^##\s/m,
+    "# "
+  );
   const promptsHeader = TEMPLATES.promptsSection.replace(/^##\s/m, "# ");
   const chatmodesHeader = TEMPLATES.chatmodesSection.replace(/^##\s/m, "# ");
-  const collectionsHeader = TEMPLATES.collectionsSection.replace(/^##\s/m, "# ");
+  const collectionsHeader = TEMPLATES.collectionsSection.replace(
+    /^##\s/m,
+    "# "
+  );
 
   const instructionsReadme = buildCategoryReadme(
     generateInstructionsSection,
@@ -591,7 +715,7 @@ try {
     chatmodesHeader,
     TEMPLATES.chatmodesUsage
   );
-  
+
   // Generate collections README
   const collectionsReadme = buildCategoryReadme(
     generateCollectionsSection,
@@ -601,15 +725,24 @@ try {
   );
 
   // Write category outputs
-  writeFileIfChanged(path.join(__dirname, "README.instructions.md"), instructionsReadme);
+  writeFileIfChanged(
+    path.join(__dirname, "README.instructions.md"),
+    instructionsReadme
+  );
   writeFileIfChanged(path.join(__dirname, "README.prompts.md"), promptsReadme);
-  writeFileIfChanged(path.join(__dirname, "README.chatmodes.md"), chatmodesReadme);
-  writeFileIfChanged(path.join(__dirname, "README.collections.md"), collectionsReadme);
+  writeFileIfChanged(
+    path.join(__dirname, "README.chatmodes.md"),
+    chatmodesReadme
+  );
+  writeFileIfChanged(
+    path.join(__dirname, "README.collections.md"),
+    collectionsReadme
+  );
 
   // Generate individual collection README files
   if (fs.existsSync(collectionsDir)) {
     console.log("Generating individual collection README files...");
-    
+
     const collectionFiles = fs
       .readdirSync(collectionsDir)
       .filter((file) => file.endsWith(".collection.yml"));
@@ -617,10 +750,14 @@ try {
     for (const file of collectionFiles) {
       const filePath = path.join(collectionsDir, file);
       const collection = parseCollectionYaml(filePath);
-      
+
       if (collection) {
-        const collectionId = collection.id || path.basename(file, ".collection.yml");
-        const readmeContent = generateCollectionReadme(collection, collectionId);
+        const collectionId =
+          collection.id || path.basename(file, ".collection.yml");
+        const readmeContent = generateCollectionReadme(
+          collection,
+          collectionId
+        );
         const readmeFile = path.join(collectionsDir, `${collectionId}.md`);
         writeFileIfChanged(readmeFile, readmeContent);
       }

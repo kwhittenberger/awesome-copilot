@@ -13,7 +13,8 @@ Instructions help customize GitHub Copilot's behavior for specific technologies,
 3. **Structure your content**: Start with a clear heading and organize your instructions logically
 4. **Test your instructions**: Make sure your instructions work well with GitHub Copilot
 
-#### Example instruction format:
+#### Example instruction format
+
 ```markdown
 ---
 description: 'Instructions for customizing GitHub Copilot behavior for specific technologies and practices'
@@ -41,7 +42,8 @@ Prompts are ready-to-use templates for specific development scenarios and tasks.
 3. **Include frontmatter**: Add metadata at the top of your file (optional but recommended)
 4. **Structure your prompt**: Provide clear context and specific instructions
 
-#### Example prompt format:
+#### Example prompt format
+
 ```markdown
 ---
 mode: 'agent'
@@ -69,7 +71,8 @@ Chat modes are specialized configurations that transform GitHub Copilot Chat int
 4. **Define the persona**: Create a clear identity and expertise area for the chat mode
 5. **Test your chat mode**: Ensure the chat mode provides helpful, accurate responses in its domain
 
-#### Example chat mode format:
+#### Example chat mode format
+
 ```markdown
 ---
 description: 'Brief description of the chat mode and its purpose'
@@ -109,7 +112,8 @@ Collections group related prompts, instructions, and chat modes around specific 
 3. **Reference existing items**: Collections should only reference files that already exist in the repository
 4. **Test your collection**: Verify all referenced files exist and work well together
 
-#### Creating a collection:
+#### Creating a collection
+
 ```bash
 # Using the creation script
 node create-collection.js my-collection-id
@@ -117,7 +121,8 @@ node create-collection.js my-collection-id
 # Or using VS Code Task: Ctrl+Shift+P > "Tasks: Run Task" > "create-collection"
 ```
 
-#### Example collection format:
+#### Example collection format
+
 ```yaml
 id: my-collection-id
 name: My Collection Name
@@ -130,12 +135,43 @@ items:
     kind: instruction
   - path: chatmodes/my-chatmode.chatmode.md
     kind: chat-mode
+    usage: |
+     recommended # or "optional" if not essential to the workflow
+
+     This chat mode requires the following instructions/prompts/MCPs:
+      - Instruction 1
+      - Prompt 1
+      - MCP 1
+
+     This chat mode is ideal for...
+      - Use case 1
+      - Use case 2
+    
+      Here is an example of how to use it:
+      ```markdown, task-plan.prompt.md
+      ---
+      mode: task-planner
+      title: Plan microsoft fabric realtime intelligence terraform support
+      ---
+      #file: <file including in chat context>
+      Do an action to achieve goal.
+      ```
+
+      To get the best results, consider...
+      - Tip 1
+      - Tip 2
+    
 display:
   ordering: alpha # or "manual" to preserve order above
   show_badge: false # set to true to show collection badge
 ```
 
-#### Collection Guidelines:
+For full example of usage checkout edge-ai tasks collection:
+- [edge-ai-tasks.collection.yml](./collections/edge-ai-tasks.collection.yml)
+- [edge-ai-tasks.md](./collections/edge-ai-tasks.md)
+
+#### Collection Guidelines
+
 - **Focus on workflows**: Group items that work together for specific use cases
 - **Reasonable size**: Typically 3-10 items work well
 - **Test combinations**: Ensure the items complement each other effectively
@@ -146,7 +182,7 @@ display:
 
 1. **Fork this repository**
 2. **Create a new branch** for your contribution
-3. **Add your instruction or prompt file** following the guidelines above
+3. **Add your instruction, prompt file, chatmode, or collection** following the guidelines above
 4. **Run the update script** (optional): `node update-readme.js` to update the README with your new file
    - A GitHub Actions workflow will verify that this step was performed correctly
    - If the README.md would be modified by running the script, the PR check will fail with a comment showing the required changes
@@ -155,7 +191,7 @@ display:
    - A brief description of what your instruction/prompt does
    - Any relevant context or usage notes
 
-**Note**: Once your contribution is merged, you'll automatically be added to our [Contributors](#contributors-) section! We use [all-contributors](https://github.com/all-contributors/all-contributors) to recognize all types of contributions to the project.
+**Note**: Once your contribution is merged, you'll automatically be added to our [Contributors](./README.md#contributors-) section! We use [all-contributors](https://github.com/all-contributors/all-contributors) to recognize all types of contributions to the project.
 
 ## What We Accept
 
@@ -194,6 +230,7 @@ To maintain a safe, responsible, and constructive community, we will **not accep
 This project uses [all-contributors](https://github.com/all-contributors/all-contributors) to recognize contributors. When you make a contribution, you'll automatically be recognized in our contributors list!
 
 We welcome contributions of all types, including:
+
 - 📝 Documentation improvements
 - 💻 Code contributions
 - 🐛 Bug reports and fixes
